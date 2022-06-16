@@ -53,7 +53,6 @@ void uartio_close(uint8_t port)
    }
 }
 
-
 /* Tries to set the baud rate for a port.
  * Tries because it only can determine baudrate for a limited set of frequencies
  *    and only for baudrate 19200 at the moment.
@@ -68,7 +67,7 @@ void uartio_close(uint8_t port)
  * Note: UART setup with this function uses SMCLK, but does not change it.
  *       If successful, it returns BAUD_SUCCESS, else BAUD_FAIL
  */
-uint8_t uartio_baud_set(uint8_t port, int baud)
+uint8_t uartio_baud_set(uint8_t port, uint16_t baud)
 {
    uint8_t ovs = 0;
    uint16_t brw = 0;
@@ -135,7 +134,7 @@ uint8_t uartio_baud_set(uint8_t port, int baud)
 }
 
 /* Sends payload via uart along module UART port (i.e. 0, 1, 2, 3). */
-void uartio_send_sync(uint8_t port, uint8_t *payload, unsigned len)
+void uartio_send_sync(uint8_t port, uint8_t *payload, size_t len)
 {
    if (len == 0)
       return;
@@ -180,15 +179,14 @@ void uartio_send_sync(uint8_t port, uint8_t *payload, unsigned len)
 }
 
 /* sends one character via uart */
-int uartio_putchar(uint8_t port, int c)
+void uartio_putchar(uint8_t port, uint8_t c)
 {
    uint8_t ch = c;
-   uartio_send_sync(port, &ch, 1);
-   return c;
+   uartio_send_sync(port, &c, 1);
 }
 
 /* sends a string via uart w/ no new line*/
-int uartio_puts_no_newline(uint8_t port, const char *ptr)
+int uartio_puts_no_newline(uint8_t port, const uint8_t *ptr)
 {
    unsigned len = 0;
    const char *p = ptr;
@@ -201,7 +199,7 @@ int uartio_puts_no_newline(uint8_t port, const char *ptr)
 }
 
 /* sends a string via uart w/ new line */
-int uartio_puts(uint8_t port, const char *ptr)
+int uartio_puts(uint8_t port, const uint8_t *ptr)
 {
    unsigned len;
 
@@ -210,7 +208,6 @@ int uartio_puts(uint8_t port, const char *ptr)
 
    return len;
 }
-
 
 #ifdef UART0_INT_ENABLE
 __attribute__((interrupt(EUSCI_A0_VECTOR))) void EUSCI_A0_ISR(void)
