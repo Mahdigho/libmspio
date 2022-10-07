@@ -21,13 +21,6 @@
 
 #define PUTC(p, c) uartio_putchar(p, c)
 
-/* opens and closes UART channells.
- * open uses uartio_baud_set, so there is a chance it may fail atm
- */
-
-uint8_t uartio_open(uint8_t port);
-void uartio_close(uint8_t port);
-
 /* Tries to set the baud rate for a port.
  * Tries because it only can determine baudrate for a limited set of frequencies
  *    and only for baudrate 19200 at the moment.
@@ -43,6 +36,13 @@ void uartio_close(uint8_t port);
  *       If successful, it returns BAUD_SUCCESS, else BAUD_FAIL
  */
 uint8_t uartio_baud_set(uint8_t port, uint16_t baud);
+
+/* opens and closes UART channells.
+ * open uses uartio_baud_set, so there is a chance it may fail atm
+ */
+
+uint8_t uartio_open(uint8_t port);
+void uartio_close(uint8_t port);
 
 // sends a UART payload with length len on port
 void uartio_send_sync(uint8_t port, uint8_t *payload, size_t len);
