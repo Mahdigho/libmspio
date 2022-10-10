@@ -65,14 +65,29 @@
    }                                          \
    i2c_stop(x)
 
-#define i2cio_init(name, port, addr) \
-   STIC3(i2c, port, _pins)           \
-   ();
-// void name(uint8_t addr)                   \
-   // {                                         \
-   //                    \
-   //    ();                                    \
-   //    i2c_init(port, addr, i2c_clock_div()); \
-   // }
+#define i2cio_init_maker(name)           \
+   void name(uint8_t port, uint8_t addr) \
+   {                                     \
+      uint16_t div = i2c_clock_div();    \
+      switch (port)                      \
+      {                                  \
+      case 0:                            \
+         i2c0_pins();                    \
+         i2c_init(0, addr, div);         \
+         break;                          \
+      case 1:                            \
+         i2c1_pins();                    \
+         i2c_init(1, addr, div);         \
+         break;                          \
+      case 2:                            \
+         i2c2_pins();                    \
+         i2c_init(2, addr, div);         \
+         break;                          \
+      case 3:                            \
+         i2c3_pins();                    \
+         i2c_init(3, addr, div);         \
+         break;                          \
+      }                                  \
+   }
 
 #endif /* INCLUDE_MSPIO_I2CIO_H */
