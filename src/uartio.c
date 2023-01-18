@@ -7,6 +7,7 @@
 static uint8_t *tx_data_sync;
 static unsigned tx_len_sync;
 static volatile bool tx_finished_sync;
+static unsigned tx_len_sync_real;
 
 uint8_t uartio_open(uint8_t port)
 {
@@ -134,19 +135,20 @@ uint8_t uartio_baud_set(uint8_t port, uint16_t baud)
 }
 
 /* Sends payload via uart along module UART port (i.e. 0, 1, 2, 3). */
-void uartio_send_sync(uint8_t port, uint8_t *payload, size_t len)
+size_t uartio_send_sync(uint8_t port, uint8_t *payload, size_t len)
 {
    if (len == 0)
-      return;
+      return 0;
 
    // inaccessible port
    if (port >= MODULE_NUM)
-      return;
+      return 0;
 
    // Setup pointers for the ISR
    tx_data_sync = payload;
    tx_len_sync = len;
    tx_finished_sync = false;
+   tx_len_sync_real = 0;
 
    // fires up an interrupt cause the buffer is empty
    switch (port)
@@ -176,37 +178,40 @@ void uartio_send_sync(uint8_t port, uint8_t *payload, size_t len)
       ;
 #endif
    _disable_interrupts();
+   return tx_len_sync_real;
 }
 
 /* sends one character via uart */
-void uartio_putchar(uint8_t port, uint8_t c)
+size_t uartio_putchar(uint8_t port, uint8_t c)
 {
    uint8_t ch = c;
    uartio_send_sync(port, &c, 1);
+   return 1;
 }
 
 /* sends a string via uart w/ no new line*/
-int uartio_puts_no_newline(uint8_t port, const uint8_t *ptr)
+size_t uartio_puts_no_newline(uint8_t port, const uint8_t *ptr)
 {
-   unsigned len = 0;
+   size_t len = 0;
    const char *p = ptr;
 
    while (*p++ != '\0')
       len++;
 
-   uartio_send_sync(port, (uint8_t *)ptr, len);
-   return len;
+   size_t real_sent = uartio_send_sync(port, (uint8_t *)ptr, len);
+   return real_sent;
+   // return len;
 }
 
 /* sends a string via uart w/ new line */
-int uartio_puts(uint8_t port, const uint8_t *ptr)
+size_t uartio_puts(uint8_t port, const uint8_t *ptr)
 {
-   unsigned len;
+   size_t len;
 
    len = uartio_puts_no_newline(port, ptr);
    uartio_putchar(port, '\n');
 
-   return len;
+   return len + 1;
 }
 
 #ifdef UART0_INT_ENABLE
@@ -220,6 +225,7 @@ __attribute__((interrupt(EUSCI_A0_VECTOR))) void EUSCI_A0_ISR(void)
       break;
    case UCIV__UCTXIFG:
       UCA0TXBUF = *tx_data_sync++;
+      tx_len_sync_real++;
       if (--tx_len_sync == 0)
       {
          UCA0IE &= ~UCTXIE;
@@ -230,6 +236,7 @@ __attribute__((interrupt(EUSCI_A0_VECTOR))) void EUSCI_A0_ISR(void)
    case UCIV__UCSTTIFG:
       break;
    case UCIV__UCTXCPTIFG:
+      UCA0IE &= ~UCTXCPTIE;
 #ifdef UARTSLEEP
       LPM1_EXIT;
 #else
@@ -263,6 +270,7 @@ __attribute__((interrupt(EUSCI_A1_VECTOR))) void EUSCI_A1_ISR(void)
    case UCIV__UCSTTIFG:
       break;
    case UCIV__UCTXCPTIFG:
+      UCA1IE &= ~UCTXCPTIE;
 #ifdef UARTSLEEP
       LPM1_EXIT;
 #else
@@ -296,6 +304,7 @@ __attribute__((interrupt(EUSCI_A2_VECTOR))) void EUSCI_A2_ISR(void)
    case UCIV__UCSTTIFG:
       break;
    case UCIV__UCTXCPTIFG:
+      UCA2IE &= ~UCTXCPTIE;
 #ifdef UARTSLEEP
       LPM1_EXIT;
 #else
@@ -329,6 +338,7 @@ __attribute__((interrupt(EUSCI_A3_VECTOR))) void EUSCI_A3_ISR(void)
    case UCIV__UCSTTIFG:
       break;
    case UCIV__UCTXCPTIFG:
+      UCA3IE &= ~UCTXCPTIE;
 #ifdef UARTSLEEP
       LPM1_EXIT;
 #else

@@ -45,15 +45,15 @@ uint8_t uartio_open(uint8_t port);
 void uartio_close(uint8_t port);
 
 // sends a UART payload with length len on port
-void uartio_send_sync(uint8_t port, uint8_t *payload, size_t len);
+size_t uartio_send_sync(uint8_t port, uint8_t *payload, size_t len);
 
 /* sends one character via uart */
-void uartio_putchar(uint8_t port, uint8_t c);
+size_t uartio_putchar(uint8_t port, uint8_t c);
 
 /* sends a string via uart w/ no new line*/
-int uartio_puts_no_newline(uint8_t port, const uint8_t *ptr);
+size_t uartio_puts_no_newline(uint8_t port, const uint8_t *ptr);
 
 /* sends a string via uart w/ new line */
-int uartio_puts(uint8_t port, const uint8_t *ptr);
+size_t uartio_puts(uint8_t port, const uint8_t *ptr);
 
 #endif /* INCLUDE_MSPIO_UARTIO_H */

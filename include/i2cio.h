@@ -3,6 +3,7 @@
 
 #include <i2c.h>
 #include <clock.h>
+#include <stddef.h>
 
 #define i2cio_read_single(x, reg, var) \
    i2c_int_clear(x);                   \
@@ -15,7 +16,8 @@
    i2c_wait_sttbusy(x);                \
    i2c_stop(x);                        \
    i2c_wait_rxbusy(x);                 \
-   i2c_rxbuf(x, var)
+   i2c_rxbuf(x, var);                  \
+   i2c_wait_busy(x)
 
 #define i2cio_write_single(x, reg, var) \
    i2c_int_clear(x);                    \
@@ -25,7 +27,8 @@
    i2c_wait_txbusy(x);                  \
    i2c_txbuf(x, var);                   \
    i2c_wait_txbusy(x);                  \
-   i2c_stop(x)
+   i2c_stop(x);                         \
+   i2c_wait_busy(x)
 
 #define i2cio_read_multi(x, reg, arr, count) \
    i2c_int_clear(x);                         \
@@ -49,7 +52,8 @@
          if (i == (count - 2))               \
             i2c_stop(x);                     \
       }                                      \
-   }
+   }                                         \
+   i2c_wait_busy(x)
 
 #define i2cio_write_multi(x, reg, arr, count) \
    i2c_int_clear(x);                          \
@@ -63,7 +67,8 @@
          i2c_txbuf(x, arr[i]);                \
       }                                       \
    }                                          \
-   i2c_stop(x)
+   i2c_stop(x);                               \
+   i2c_wait_busy(x)
 
 #define i2cio_init_maker(name)           \
    void name(uint8_t port, uint8_t addr) \
