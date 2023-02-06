@@ -185,7 +185,7 @@ size_t uartio_send_sync(uint8_t port, uint8_t *payload, size_t len)
 size_t uartio_putchar(uint8_t port, uint8_t c)
 {
    uint8_t ch = c;
-   uartio_send_sync(port, &c, 1);
+   uartio_send_sync(port, &ch, 1);
    return 1;
 }
 
