@@ -193,7 +193,7 @@ size_t uartio_putchar(uint8_t port, uint8_t c)
 size_t uartio_puts_no_newline(uint8_t port, const uint8_t *ptr)
 {
    size_t len = 0;
-   const char *p = ptr;
+   const char *p = (const char*) ptr;
 
    while (*p++ != '\0')
       len++;
