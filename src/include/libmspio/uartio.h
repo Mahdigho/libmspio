@@ -1,8 +1,8 @@
 #ifndef INCLUDE_MSPIO_UARTIO_H
 #define INCLUDE_MSPIO_UARTIO_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define BAUD_SUCCESS 1
 #define BAUD_FAIL 0
@@ -40,7 +40,6 @@ uint8_t uartio_baud_set(uint8_t port, uint16_t baud);
 /* opens and closes UART channells.
  * open uses uartio_baud_set, so there is a chance it may fail atm
  */
-
 uint8_t uartio_open(uint8_t port);
 void uartio_close(uint8_t port);
 
