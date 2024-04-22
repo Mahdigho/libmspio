@@ -129,6 +129,9 @@ uint8_t uartio_baud_set(uint8_t port, uint16_t baud) {
 
 /* Sends payload via uart along module UART port (i.e. 0, 1, 2, 3). */
 size_t uartio_send_sync(uint8_t port, uint8_t *payload, size_t len) {
+  /* Save interrupt state and disable interrupts. */
+  uint16_t interruptState = _get_interrupt_state();
+  _disable_interrupts();
   if (len == 0)
     return 0;
 
@@ -162,13 +165,14 @@ size_t uartio_send_sync(uint8_t port, uint8_t *payload, size_t len) {
   }
 
 #ifdef UARTSLEEP
-  __bis_SR_register(LPM1_bits | GIE);
+  _bis_SR_register(LPM1_bits + GIE);
 #else
   _enable_interrupts();
   while (!tx_finished_sync)
     ;
 #endif
-  _disable_interrupts();
+  /* Restore original interrupt state. */
+  _set_interrupt_state(interruptState);
   return tx_len_sync_real;
 }
 
