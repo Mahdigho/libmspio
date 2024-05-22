@@ -71,6 +71,12 @@ uint8_t uartio_baud_set(uint8_t port, uint16_t baud) {
   uint16_t brs = 0;
 
   switch (sclock_freq()) {
+  case 16000000:
+    ovs = 1;
+    brw = 52;
+    brf = 1;
+    brs = 0x49;
+    break;
   case 8000000:
     ovs = 1;
     brw = 26;
