@@ -5,89 +5,62 @@
 #include <libmsp/i2c.h>
 #include <stddef.h>
 
-#define i2cio_read_single(x, reg, var)                                         \
-  i2c_int_clear(x);                                                            \
-  i2c_tx_start(x);                                                             \
-  i2c_wait_txbusy(x);                                                          \
-  i2c_txbuf(x, reg);                                                           \
-  i2c_wait_txbusy(x);                                                          \
-  i2c_rx(x);                                                                   \
-  i2c_repeated(x);                                                             \
-  i2c_wait_sttbusy(x);                                                         \
-  i2c_stop(x);                                                                 \
-  i2c_wait_rxbusy(x);                                                          \
-  i2c_rxbuf(x, var);                                                           \
-  i2c_wait_busy(x)
+//******************************************************************************
+// General I2C State Machine ***************************************************
+// Adopted from the EWSN 24 compteition
+//******************************************************************************
 
-#define i2cio_write_single(x, reg, var)                                        \
-  i2c_int_clear(x);                                                            \
-  i2c_tx_start(x);                                                             \
-  i2c_wait_txbusy(x);                                                          \
-  i2c_txbuf(x, reg);                                                           \
-  i2c_wait_txbusy(x);                                                          \
-  i2c_txbuf(x, var);                                                           \
-  i2c_wait_txbusy(x);                                                          \
-  i2c_stop(x);                                                                 \
-  i2c_wait_busy(x)
+#define MAX_BUFFER_SIZE 32
+#define DEFAULT_ADDR 0x48
 
-#define i2cio_read_multi(x, reg, arr, count)                                   \
-  i2c_int_clear(x);                                                            \
-  i2c_tx_start(x);                                                             \
-  i2c_wait_txbusy(x);                                                          \
-  i2c_txbuf(x, reg);                                                           \
-  i2c_wait_txbusy(x);                                                          \
-  i2c_rx(x);                                                                   \
-  i2c_repeated(x);                                                             \
-  if (count == 1) {                                                            \
-    i2c_wait_sttbusy(x);                                                       \
-    i2c_stop(x);                                                               \
-  }                                                                            \
-  {                                                                            \
-    for (size_t i = 0; i < count; i++) {                                       \
-      i2c_wait_rxbusy(x);                                                      \
-      i2c_rxbuf(x, arr[i]);                                                    \
-                                                                               \
-      if (i == (count - 2))                                                    \
-        i2c_stop(x);                                                           \
-    }                                                                          \
-  }                                                                            \
-  i2c_wait_busy(x)
+typedef enum I2C_ModeEnum {
+  IDLE_MODE,
+  NACK_MODE,
+  TX_REG_ADDRESS_LOW_MODE,
+  TX_REG_ADDRESS_HIGH_MODE,
+  RX_REG_ADDRESS_MODE,
+  TX_DATA_MODE,
+  RX_DATA_MODE,
+  SWITCH_TO_RX_MODE,
+  SWITHC_TO_TX_MODE,
+  TIMEOUT_MODE
+} I2C_Mode;
 
-#define i2cio_write_multi(x, reg, arr, count)                                  \
-  i2c_int_clear(x);                                                            \
-  i2c_tx_start(x);                                                             \
-  i2c_wait_txbusy(x);                                                          \
-  i2c_txbuf(x, reg);                                                           \
-  {                                                                            \
-    for (size_t i = 0; i < count; i++) {                                       \
-      i2c_wait_txbusy(x);                                                      \
-      i2c_txbuf(x, arr[i]);                                                    \
-    }                                                                          \
-  }                                                                            \
-  i2c_stop(x);                                                                 \
-  i2c_wait_busy(x)
+/* I2C Write and Read Functions */
 
-#define i2cio_init_maker(name)                                                 \
-  void name(uint8_t port, uint8_t addr) {                                      \
-    uint16_t div = i2c_clock_div();                                            \
-    switch (port) {                                                            \
-    case 0:                                                                    \
-      i2c0_pins();                                                             \
-      i2c_init(0, addr, div);                                                  \
-      break;                                                                   \
-    case 1:                                                                    \
-      i2c1_pins();                                                             \
-      i2c_init(1, addr, div);                                                  \
-      break;                                                                   \
-    case 2:                                                                    \
-      i2c2_pins();                                                             \
-      i2c_init(2, addr, div);                                                  \
-      break;                                                                   \
-    case 3:                                                                    \
-      i2c3_pins();                                                             \
-      i2c_init(3, addr, div);                                                  \
-      break;                                                                   \
-    }                                                                          \
-  }
+/* For target device with dev_addr, writes the data specified in *reg_data
+ *
+ * dev_addr: The target device address.
+ *           Example: 0x50
+ * reg_addr: The register to send to the target.
+ *           Example: 0x0
+ * *reg_data: The buffer to write
+ *           Example: uint8_t buffer[20]
+ * count: The length of *reg_data
+ *           Example: 20
+ *  */
+I2C_Mode I2C_WriteReg(uint8_t dev_addr, uint16_t reg_addr, uint8_t *reg_data,
+                      uint8_t count);
+
+/* For target device with dev_addr, read the data specified in targets reg_addr.
+ * The received data is available in ReceiveBuffer
+ *
+ * dev_addr: The target device address.
+ *           Example: 0x50
+ * reg_addr: The register to send to the target.
+ *           Example: 0x0
+ * count: The length of data to read
+ *           Example: 1
+ *  */
+I2C_Mode I2C_ReadReg(uint8_t dev_addr, uint16_t reg_addr, uint8_t count);
+
+void CopyArray(uint8_t *source, uint8_t *dest, uint8_t count);
+
+void initI2C(uint8_t port);
+
+/* ReceiveBuffer: Buffer used to receive data in the ISR */
+extern uint8_t ReceiveBuffer[];
+/* Used to track the state of the software state machine*/
+extern I2C_Mode ControllerMode;
 
 #endif /* INCLUDE_MSPIO_I2CIO_H */

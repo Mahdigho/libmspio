@@ -1,6 +1,6 @@
 LIB = libmspio
 
-OBJECTS = uartio.o
+OBJECTS = uartio.o i2cio.o
 
 DEPS += libmsp
 
